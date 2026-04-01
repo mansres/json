@@ -17,7 +17,7 @@ function App() {
       setError(null);
       return;
     }
-    
+
     try {
       const parsed = JSON.parse(jsonInput);
       setParsedData(parsed);
@@ -28,19 +28,19 @@ function App() {
   }, [jsonInput]);
 
   // If no parsed data, default tab should be hidden or just show empty state
-  
+
   return (
     <div className="container animate-fade-in">
       <header className="header glass-panel" style={{ padding: '1.5rem 2rem', border: 'none' }}>
         <h1>
           <FileJson size={28} />
-          JSON to Table
+          JSON Visualizer
         </h1>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+        {/* <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
           <a href="https://github.com/mansres/json" target="_blank" rel="noopener noreferrer" className="btn-icon" title="View on GitHub">
             <ExternalLink size={20} />
           </a>
-        </div>
+        </div> */}
       </header>
 
       <main className="main-content">
@@ -49,10 +49,10 @@ function App() {
             <span>Input JSON</span>
             <Database size={16} color="var(--text-secondary)" />
           </div>
-          <JsonInput 
-            value={jsonInput} 
-            onChange={setJsonInput} 
-            error={error} 
+          <JsonInput
+            value={jsonInput}
+            onChange={setJsonInput}
+            error={error}
             hasData={!!parsedData}
           />
         </aside>
@@ -60,21 +60,21 @@ function App() {
         <section className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
           <div className="panel-header" style={{ padding: '0.5rem 1rem' }}>
             <div className="tabs-container" style={{ margin: 0, border: 'none' }}>
-              <button 
+              <button
                 className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
                 onClick={() => setActiveTab('overview')}
                 disabled={!parsedData}
               >
                 <LayoutDashboard size={16} /> Overview
               </button>
-              <button 
+              <button
                 className={`tab ${activeTab === 'tree' ? 'active' : ''}`}
                 onClick={() => setActiveTab('tree')}
                 disabled={!parsedData}
               >
                 <Network size={16} /> Tree View
               </button>
-              <button 
+              <button
                 className={`tab ${activeTab === 'table' ? 'active' : ''}`}
                 onClick={() => setActiveTab('table')}
                 disabled={!parsedData}
@@ -83,7 +83,7 @@ function App() {
               </button>
             </div>
           </div>
-          
+
           <div className="viewer-content">
             {!parsedData && !error && (
               <div className="empty-state">
@@ -91,7 +91,7 @@ function App() {
                 <p>Paste your JSON on the left to start analyzing.</p>
               </div>
             )}
-            
+
             {error && (
               <div className="empty-state" style={{ color: 'var(--danger)' }}>
                 <p>Invalid JSON format.</p>
