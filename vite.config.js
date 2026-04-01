@@ -5,3 +5,5 @@ export default defineConfig({
   plugins: [react()],
   base: '/json/'
 })
+
+// Triggering deployment manually
