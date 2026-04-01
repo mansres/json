@@ -63,7 +63,7 @@ function App() {
           </a>
           <h1 style={{ fontSize: '1.25rem' }}>
             <FileJson size={24} />
-            JSON Visualizer
+            JSON Vision
           </h1>
         </div>
         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
