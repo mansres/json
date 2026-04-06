@@ -1,15 +1,44 @@
 import React from 'react';
-import { AlignLeft, Trash2 } from 'lucide-react';
+import { AlignLeft, Trash2, Copy, Download, Minimize2 } from 'lucide-react';
 
-export default function JsonInput({ value, onChange, error, hasData }) {
+export default function JsonInput({ value, onChange, error, hasData, onToast }) {
   const handleFormat = () => {
     try {
       if (!value) return;
       const parsed = JSON.parse(value);
       onChange(JSON.stringify(parsed, null, 2));
     } catch (e) {
-      // Ignored: cannot format invalid JSON
+      if (onToast) onToast('Cannot format invalid JSON', 'danger');
     }
+  };
+
+  const handleMinify = () => {
+    try {
+      if (!value) return;
+      const parsed = JSON.parse(value);
+      onChange(JSON.stringify(parsed));
+      if (onToast) onToast('JSON Minified');
+    } catch (e) {
+      if (onToast) onToast('Cannot minify invalid JSON', 'danger');
+    }
+  };
+
+  const handleCopy = () => {
+    if (!value) return;
+    navigator.clipboard.writeText(value);
+    if (onToast) onToast('JSON copied to clipboard');
+  };
+
+  const handleDownload = () => {
+    if (!value) return;
+    const blob = new Blob([value], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'data.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    if (onToast) onToast('Downloading JSON file...');
   };
 
   const handleClear = () => {
@@ -29,11 +58,36 @@ export default function JsonInput({ value, onChange, error, hasData }) {
         </button>
         <button 
           className="btn-icon" 
+          title="Minify JSON" 
+          onClick={handleMinify}
+          disabled={!hasData || !!error}
+        >
+          <Minimize2 size={16} />
+        </button>
+        <button 
+          className="btn-icon" 
+          title="Copy JSON" 
+          onClick={handleCopy}
+          disabled={!value}
+        >
+          <Copy size={16} />
+        </button>
+        <button 
+          className="btn-icon" 
+          title="Download JSON" 
+          onClick={handleDownload}
+          disabled={!value}
+        >
+          <Download size={16} />
+        </button>
+        <button 
+          className="btn-icon" 
           title="Clear" 
           onClick={handleClear}
           disabled={!value}
+          style={{ marginLeft: 'auto' }}
         >
-          <Trash2 size={16} /> <span style={{fontSize: '0.75rem', marginLeft: '0.5rem'}}>Clear</span>
+          <Trash2 size={16} />
         </button>
       </div>
       

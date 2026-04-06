@@ -26,8 +26,15 @@ function App() {
   const [jsonInput, setJsonInput] = useState('');
   const [parsedData, setParsedData] = useState(null);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState('about');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const [toast, setToast] = useState({ show: false, message: '', type: 'info' });
+
+  const showToast = (message, type = 'info') => {
+    setToast({ show: true, message, type });
+    setTimeout(() => setToast({ ...toast, show: false }), 3000);
+  };
 
 
   useEffect(() => {
@@ -41,10 +48,28 @@ function App() {
       const parsed = JSON.parse(jsonInput);
       setParsedData(parsed);
       setError(null);
+      
+      // Navigate to Table View only if it's the first time valid data is loaded
+      // or if the user is currently on 'about' or 'overview'
+      if (activeTab === 'about' || activeTab === 'overview') {
+        setActiveTab('table');
+      }
     } catch (err) {
       setError(err.message);
     }
   }, [jsonInput]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 300);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // If no parsed data, default tab should be hidden or just show empty state
 
@@ -92,6 +117,7 @@ function App() {
               onChange={setJsonInput}
               error={error}
               hasData={!!parsedData}
+              onToast={showToast}
             />
           )}
         </aside>
@@ -194,6 +220,23 @@ function App() {
           </div>
         </section>
       </main>
+
+      {/* Floating UI Elements */}
+      {showScrollTop && (
+        <button 
+          className="scroll-top-btn animate-fade-in" 
+          onClick={scrollToTop}
+          title="Scroll to Top"
+        >
+          <ChevronRight size={24} style={{ transform: 'rotate(-90deg)' }} />
+        </button>
+      )}
+
+      {toast.show && (
+        <div className={`toast toast-${toast.type} animate-fade-in`}>
+          <span>{toast.message}</span>
+        </div>
+      )}
     </div>
   );
 }

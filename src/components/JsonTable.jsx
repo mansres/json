@@ -1,9 +1,25 @@
 import React, { useMemo, useState } from 'react';
-import { Download, FileSpreadsheet, Search } from 'lucide-react';
+import { Download, FileSpreadsheet, Search, ArrowUp, ArrowDown, Copy, Check } from 'lucide-react';
 import { exportToExcel, exportToCSV } from '../utils/exportUtils';
 
 export default function JsonTable({ data }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+  const [copiedCell, setCopiedCell] = useState(null);
+
+  const requestSort = (key) => {
+    let direction = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const handleCopyCell = (text, rowIdx, colIdx) => {
+    navigator.clipboard.writeText(text);
+    setCopiedCell(`${rowIdx}-${colIdx}`);
+    setTimeout(() => setCopiedCell(null), 2000);
+  };
 
   // Process data to array of objects for the table
   const tableData = useMemo(() => {
@@ -55,6 +71,28 @@ export default function JsonTable({ data }) {
     });
   }, [tableData, searchTerm]);
 
+  const sortedData = useMemo(() => {
+    let sortableItems = [...filteredData];
+    if (sortConfig.key !== null) {
+      sortableItems.sort((a, b) => {
+        const aVal = a[sortConfig.key];
+        const bVal = b[sortConfig.key];
+
+        if (aVal === null || aVal === undefined) return 1;
+        if (bVal === null || bVal === undefined) return -1;
+
+        if (aVal < bVal) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aVal > bVal) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return sortableItems;
+  }, [filteredData, sortConfig]);
+
   const handleExportExcel = () => {
     exportToExcel(filteredData, 'json_export.xlsx');
   };
@@ -71,13 +109,31 @@ export default function JsonTable({ data }) {
     );
   }
 
-  // Format cell data
+  // Format cell data with highlighting
   const renderCell = (value) => {
     if (value === null) return <span style={{color: 'var(--text-secondary)'}}>null</span>;
     if (value === undefined) return '';
-    if (typeof value === 'object') return <span style={{color: 'var(--accent-hover)'}}>{JSON.stringify(value)}</span>;
-    if (typeof value === 'boolean') return <span style={{color: 'var(--success)'}}>{value.toString()}</span>;
-    return String(value);
+    
+    const stringValue = typeof value === 'object' ? JSON.stringify(value) : String(value);
+    
+    if (!searchTerm) {
+      if (typeof value === 'object') return <span style={{color: 'var(--accent-hover)'}}>{stringValue}</span>;
+      if (typeof value === 'boolean') return <span style={{color: 'var(--success)'}}>{stringValue}</span>;
+      return stringValue;
+    }
+
+    const lowerTerm = searchTerm.toLowerCase();
+    const parts = stringValue.split(new RegExp(`(${searchTerm})`, 'gi'));
+    
+    return (
+      <span style={{ color: typeof value === 'object' ? 'var(--accent-hover)' : typeof value === 'boolean' ? 'var(--success)' : 'inherit' }}>
+        {parts.map((part, i) => 
+          part.toLowerCase() === lowerTerm ? (
+            <mark key={i} style={{ backgroundColor: 'var(--accent-primary)', color: 'white', borderRadius: '2px', padding: '0 2px' }}>{part}</mark>
+          ) : part
+        )}
+      </span>
+    );
   };
 
   return (
@@ -108,17 +164,45 @@ export default function JsonTable({ data }) {
           <thead>
             <tr>
               {columns.map((col, idx) => (
-                <th key={idx}>{col}</th>
+                <th 
+                  key={idx} 
+                  onClick={() => requestSort(col)}
+                  className="sortable-header"
+                  title={`Sort by ${col}`}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    {col}
+                    {sortConfig.key === col ? (
+                      sortConfig.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />
+                    ) : (
+                      <ArrowUp size={14} opacity={0.2} />
+                    )}
+                  </div>
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {filteredData.length > 0 ? (
-              filteredData.map((row, rowIdx) => (
+            {sortedData.length > 0 ? (
+              sortedData.map((row, rowIdx) => (
                 <tr key={rowIdx}>
                   {columns.map((col, colIdx) => (
-                    <td key={colIdx} style={{ maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={String(row[col])}>
-                      {renderCell(row[col])}
+                    <td key={colIdx} className="table-cell">
+                      <div className="cell-content">
+                        <div 
+                          className="cell-text" 
+                          title={String(row[col])}
+                        >
+                          {renderCell(row[col])}
+                        </div>
+                        <button 
+                          className="btn-icon cell-copy-btn" 
+                          onClick={() => handleCopyCell(String(row[col]), rowIdx, colIdx)}
+                          title="Copy cell content"
+                        >
+                          {copiedCell === `${rowIdx}-${colIdx}` ? <Check size={12} color="var(--success)" /> : <Copy size={12} />}
+                        </button>
+                      </div>
                     </td>
                   ))}
                 </tr>
@@ -135,7 +219,7 @@ export default function JsonTable({ data }) {
       </div>
       
       <div style={{ marginTop: '1rem', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-        Showing {filteredData.length} of {tableData.length} records
+        Showing {sortedData.length} of {tableData.length} records
       </div>
     </div>
   );
